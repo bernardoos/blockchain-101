@@ -1,8 +1,15 @@
 import Block from './block';
 import Transaction from './transaction';
 
+/*
+ * Blockchain class. A collection of blocks, keeps a sane count of the blocks iniside the chain. Makes sense of the mining difficulty.
+ * Accounts for all the transactions across blocks and gives information of the platform.
+ */
 export default class BlockChain {
-
+  /*
+   * When the chain is created it is done so with an initial block (Genesis block without a previous block hash), a set difficulty for block mining and
+   * and a reward for mining blocks (coins freshly minted that are given to the succesfull miner).
+   */
     constructor() {
         this.chain = [this.createGenesisBlock()];
         this.difficulty = 3;
@@ -10,12 +17,25 @@ export default class BlockChain {
         this.miningReward = 100;
     }
 
+    /*
+     * A block is created as a genesis block, this block only contains the creation timestamp and optional data as set properties.
+     */
     createGenesisBlock() {
         return new Block(Date.now(), "Genesis block of simple chain", "");
     }
 
-    getLatestBlock() {
-        return this.chain[this.chain.length - 1];
+    /*
+     * The method to get the current height of the chain (the latest added block in the chain length).
+     */
+    getHeight() {
+      return this.chain.length - 1;
+    }
+
+    /*
+     * Method to get a specific block of the chain, set by height (the specific index in the chain).
+     */
+    getBlock(height) {
+        return this.chain[height];
     }
 
     //Incoming miner address
@@ -34,6 +54,10 @@ export default class BlockChain {
         ];
     }
 
+    /*
+     * Adding a new transaction to the pending transactions queue. This queue is where the transactions are waiting for a miner that will
+     * record them in a freshly mined block.
+     */
     addTransaction(transaction) {
         if (!transaction.fromAddress || !transaction.toAddress) {
             throw new Error('Transaction must include from and to address');
@@ -45,6 +69,10 @@ export default class BlockChain {
         this.pendingTransactions.push(transaction);
     }
 
+    /*
+     * The most primitive way of figuring out an address's balance is going through the whole chain, block by block, and read all the transactions
+     * where the queried address appears to add and substract the transaction's amount.
+     */
     getBalanceOfAddress(address) {
         let balance = 0;
         for (const block of this.chain) {
@@ -61,6 +89,12 @@ export default class BlockChain {
         return balance;
     }
 
+    /*
+     * Verifying that the chain is valid consists of:
+     * - Checking that each block has valid transactions.
+     * - Checking that each block's calculated hash is correct according to the block's parameters.
+     * - Checking that each block's calculated hash is correct according to the previous' block's hash and used paramters.
+     */
     isChainValid() {
         for (let i = 1; i < this.chain.length; i++) {
             const currentBlock = this.chain[i];
